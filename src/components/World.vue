@@ -8,13 +8,16 @@
       :name="dot.name"
       v-model="dot.model"
     ></Dot>
+    <div class="ground"></div>
   </div>
 </template>
 
 <script>
 import { EventEmitter } from "events";
-import { TICKS_PER_SECOND } from "../consts";
+import { TICKS_PER_SECOND, SIMULATION_SPEED } from "../consts";
 import Dot from "./Dot.vue";
+
+const base = 500000000;
 
 export default {
   name: "World",
@@ -26,48 +29,63 @@ export default {
       dots: [
         {
           model: {
-            velocity: [0, -1.5],
-            position: [200, 300],
+            velocity: [0, 0],
+            position: [base, base],
           },
           name: "earth",
-          mass: 5.972 * Math.pow(24, 10),
+          mass: 5.972 * Math.pow(10, 24),
           events: new EventEmitter(),
         },
         {
           model: {
-            velocity: [0, 3],
-            position: [300, 300],
+            velocity: [1.022 * 1000, 0],
+            position: [base, base + 0.3844 * Math.pow(10, 6) * 1000],
           },
           name: "moon",
-          //mass: 5.972 * Math.pow(24,10),
-          mass: 7.34767309 * Math.pow(22, 10),
+          mass: 0.07346 * Math.pow(10, 24),
           events: new EventEmitter(),
         },
       ],
-      enviroment: {
-        gravity: 0,
-      },
     };
   },
   mounted() {
+    let running = false;
     const tick = () => {
-      this.dots.forEach((dot) => {
-        dot.events.emit("applyAcceleration", [-this.enviroment.gravity, 0]);
-
-        this.dots.forEach((sd) => {
-          if (sd === dot) {
-            return;
-          }
-          dot.events.emit("interact", sd);
+      if (running) {
+        console.log("warn");
+        return;
+      }
+      running = true;
+      try {
+        this.dots.forEach((dot) => {
+          this.dots.forEach((sd) => {
+            if (sd === dot) {
+              return;
+            }
+            dot.events.emit("interact", sd);
+          });
         });
-      });
-      this.dots.forEach((dot) => {
-        dot.events.emit("tick");
-      });
+        this.dots.forEach((dot) => {
+          dot.events.emit("tick");
+        });
+      } finally {
+        running = false;
+      }
     };
-    tick();
-    setInterval(tick, TICKS_PER_SECOND);
-    //setInterval(tick, 1000);
+
+    const t = 1000 / (TICKS_PER_SECOND * SIMULATION_SPEED);
+    console.log("T: " + t);
+    setInterval(tick, t);
   },
 };
 </script>
+
+<style scoped>
+.ground {
+  position: absolute;
+  bottom: 0px;
+  height: 5px;
+  width: 500px;
+  background-color: red;
+}
+</style>
