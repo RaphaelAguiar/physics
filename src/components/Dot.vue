@@ -1,45 +1,76 @@
 <template>
-  <div :style="{ bottom: `${position[0]}px`, left: `${position[1]}px` }">
-    <div class="label">v: {{ formatVector(velocity, 2) }}</div>
+  <div
+    :style="{
+      bottom: `${value.position[1]}px`,
+      left: `${value.position[0]}px`,
+    }"
+  >
+    <div class="label">
+      <!--v: {{ formatVector(value.velocity, 2) }} -->
+    </div>
   </div>
 </template>
 
 <script>
-import { formatVector } from "../helpers";
-import { TICKS_PER_SECOND, PIXEL_PER_METER } from "../consts";
+import {
+  formatVector,
+  distanceBetwenPoints,
+  calculateVectorDirection,
+} from "../helpers";
+import { G, TICKS_PER_SECOND, PIXEL_PER_METER } from "../consts";
 
 export default {
-  props: ["mass", "events"],
+  props: ["mass", "events", "value", "name"],
   created() {
     this.events.on("applyAcceleration", (a) => {
-      a.forEach((aMeterPerSecond, i) => {
-        const aMeterPerTick = aMeterPerSecond / TICKS_PER_SECOND;
-        const aPixelPerTick = aMeterPerTick * PIXEL_PER_METER;
-        this.velocity[i] += aPixelPerTick;
-      });
+      this.applyAcceleration(a);
+    });
+    this.events.on("interact", (dot) => {
+      gravitationalInteract(dot);
     });
     this.events.on("tick", () => {
-      this.position = this.position.map((pi, i) => {
-        const pf = pi + this.velocity[i];
-        console.log(formatVector([pi,pf,pf-pi],2))
+      this.value.position = this.value.position.map((pi, i) => {
+        const pf = pi + this.value.velocity[i];
         return pf;
       });
-      //console.log(this.velocity);
     });
   },
   destroyed() {
     this.events.removeAllListeners();
   },
-  data() {
-    return {
-      position: [500, 100],
-      //meters per tick
-      velocity: [0, 0],
-    };
-  },
   methods: {
     formatVector,
-  }
+    applyForce(f) {
+      const a = f.map((f) => {
+        const m = this.mass;
+        const a = f / m;
+        return a;
+      });
+      this.applyAcceleration(a);
+    },
+    applyAcceleration(a) {
+      a.forEach((aMeterPerSecond, i) => {
+        const aMeterPerTick = aMeterPerSecond / TICKS_PER_SECOND;
+        const aPixelPerTick = aMeterPerTick * PIXEL_PER_METER;
+        this.value.velocity[i] += aPixelPerTick;
+      });
+    },
+    gravitationalInteract(dot) {
+      const distance = distanceBetwenPoints(
+        dot.model.position,
+        this.value.position
+      );
+      const LG = G;
+      const M = this.mass;
+      const m = dot.mass;
+      const force = (LG * M * m) / Math.pow(distance, 2);
+      const direction = calculateVectorDirection(
+        dot.model.position,
+        this.value.position
+      );
+      this.applyForce(direction.map((d) => d * force));
+    },
+  },
 };
 </script>
 
