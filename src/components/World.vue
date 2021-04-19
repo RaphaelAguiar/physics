@@ -5,6 +5,7 @@
       :key="i"
       :events="dot.events"
       :mass="dot.mass"
+      :charge="dot.charge"
       :name="dot.name"
       v-model="dot.model"
     ></Dot>
@@ -17,7 +18,8 @@ import { EventEmitter } from "events";
 import { TICKS_PER_SECOND, SIMULATION_SPEED } from "../consts";
 import Dot from "./Dot.vue";
 
-const base = 500000000;
+const baseH = 150;
+const baseV = 125;
 
 export default {
   name: "World",
@@ -29,20 +31,22 @@ export default {
       dots: [
         {
           model: {
-            velocity: [0, 0],
-            position: [base, base],
+            velocity: [-1, 0],
+            position: [baseH, baseV + 100],
           },
-          name: "earth",
-          mass: 5.972 * Math.pow(10, 24),
+          name: "q1",
+          mass: 1,
+          charge: 0,
           events: new EventEmitter(),
         },
         {
           model: {
-            velocity: [1.022 * 1000, 0],
-            position: [base, base + 0.3844 * Math.pow(10, 6) * 1000],
+            velocity: [0, 0],
+            position: [baseH, baseV],
           },
-          name: "moon",
-          mass: 0.07346 * Math.pow(10, 24),
+          name: "q2",
+          mass: 100000000000000,
+          charge: 0,
           events: new EventEmitter(),
         },
       ],
